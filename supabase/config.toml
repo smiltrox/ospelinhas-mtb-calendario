@@ -1,0 +1,8 @@
+[functions.review-race]
+verify_jwt = false
+
+[functions.notify-race]
+verify_jwt = true
+
+[functions.admin-review]
+verify_jwt = true
