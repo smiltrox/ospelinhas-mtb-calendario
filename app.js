@@ -5,7 +5,7 @@ const ready = !!cfg.SUPABASE_URL && !!cfg.SUPABASE_ANON_KEY && !cfg.SUPABASE_URL
 const sb = ready ? createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY) : null;
 const $ = (s) => document.querySelector(s);
 const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-let user = null, profile = null, isAdmin = false, season = new Date().getFullYear(), races = [], attendance = [], availability = [], profileMap = {}, signupMode = false;
+let user = null, profile = null, isAdmin = false, season = new Date().getFullYear(), races = [], attendance = [], availability = [], profileMap = {}, signupMode = false, resetRequestMode = false, recoveryMode = location.hash.includes('type=recovery');
 
 function toast(msg) { const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
 function escapeHtml(s='') { return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -13,7 +13,24 @@ function dateObj(d) { return new Date(`${d}T12:00:00`); }
 function dateKey(y,m,d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
 function setError(message='') { $('#authError').textContent=message; }
 
-$('#authSwitch').onclick=()=>{signupMode=!signupMode;$('#authTitle').textContent=signupMode?'Únete al equipo':'Bienvenido al club';$('#authIntro').textContent=signupMode?'Crea tu cuenta para compartir el calendario.':'Entra en tu calendario de temporada.';$('#nameField').hidden=!signupMode;$('#authSubmit').textContent=signupMode?'Crear cuenta →':'Entrar →';$('#authSwitchText').textContent=signupMode?'¿Ya tienes cuenta?':'¿Aún no tienes cuenta?';$('#authSwitch').textContent=signupMode?'Inicia sesión':'Regístrate';setError();};
+function showAuthMode(){
+  const password=$('#authForm').elements.password;
+  $('#nameField').hidden=!signupMode;
+  $('#passwordField').hidden=resetRequestMode;
+  $('#forgotPassword').hidden=signupMode||resetRequestMode||recoveryMode;
+  $('#authSwitch').hidden=recoveryMode;
+  $('#passwordLabel').textContent=recoveryMode?'Nueva contraseña':'Contraseña';
+  password.required=!resetRequestMode;
+  password.autocomplete=recoveryMode?'new-password':'current-password';
+  $('#authTitle').textContent=recoveryMode?'Crea una contraseña nueva':resetRequestMode?'Restablecer contraseña':signupMode?'Únete al equipo':'Bienvenido al club';
+  $('#authIntro').textContent=recoveryMode?'Elige una contraseña nueva para tu cuenta.':resetRequestMode?'Te enviaremos un enlace para crear una contraseña nueva.':signupMode?'Crea tu cuenta para compartir el calendario.':'Entra en tu calendario de temporada.';
+  $('#authSubmit').textContent=recoveryMode?'Guardar contraseña →':resetRequestMode?'Enviar enlace →':signupMode?'Crear cuenta →':'Entrar →';
+  $('#authSwitchText').textContent=resetRequestMode?'¿Recuerdas tu contraseña?':signupMode?'¿Ya tienes cuenta?':'¿Aún no tienes cuenta?';
+  $('#authSwitch').textContent=resetRequestMode?'Inicia sesión':signupMode?'Inicia sesión':'Regístrate';
+}
+$('#authSwitch').onclick=()=>{if(resetRequestMode){resetRequestMode=false;signupMode=false;}else signupMode=!signupMode;recoveryMode=false;showAuthMode();setError();};
+$('#forgotPassword').onclick=()=>{signupMode=false;resetRequestMode=true;showAuthMode();setError();};
+if(recoveryMode)showAuthMode();
 if(!ready){$('#setupNote').hidden=false;$('#authSubmit').disabled=true;$('#authSwitch').disabled=true;$('#authSubmit').textContent='Configura Supabase para continuar';}
 
 $('#authForm').onsubmit=async e=>{
@@ -21,7 +38,15 @@ $('#authForm').onsubmit=async e=>{
   const f=new FormData(e.currentTarget), email=String(f.get('email')).trim().toLowerCase(), password=String(f.get('password'));
   $('#authSubmit').disabled=true;setError('');
   try {
-    if(signupMode){
+    if(resetRequestMode){
+      const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:`${location.origin}${location.pathname}`});
+      if(error)throw error;
+      setError('Si existe una cuenta con ese correo, recibirás un enlace para restablecer la contraseña. Revisa también Spam.');
+    } else if(recoveryMode){
+      const {data,error}=await sb.auth.updateUser({password});if(error)throw error;
+      recoveryMode=false;history.replaceState(null,'',location.pathname+location.search);setError('Contraseña actualizada.');
+      if(data.user)await start(data.user);
+    } else if(signupMode){
       const {data,error}=await sb.auth.signUp({email,password,options:{data:{display_name:String(f.get('display_name')).trim()},emailRedirectTo:location.href.split('#')[0]}});
       if(error)throw error;
       if(data.session) await start(data.session.user);
@@ -167,5 +192,5 @@ $('#raceForm').onsubmit=async e=>{
 $('#bell').onclick=()=>toast('No tienes notificaciones nuevas');
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.tab==='disponibilidad')$('#busyModal').classList.add('open');else if(b.dataset.tab==='carreras')$('#eventlist').scrollIntoView({behavior:'smooth'});else if(b.dataset.tab==='admin'&&isAdmin){$('#adminSection').hidden=false;$('#adminSection').scrollIntoView({behavior:'smooth'});}else if(b.dataset.tab==='perfil'){if(confirm('¿Quieres cerrar sesión?'))sb.auth.signOut().then(()=>location.reload());}});
 
-if(sb)sb.auth.getSession().then(({data:{session}})=>{if(session)start(session.user).catch(e=>{setError(e.message);$('#authGate').style.display='grid'});});
-if(sb)sb.auth.onAuthStateChange((_event,session)=>{if(!session){user=null;$('#authGate').style.display='grid';$('.shell').classList.remove('ready');}});
+if(sb)sb.auth.getSession().then(({data:{session}})=>{if(session&&!recoveryMode)start(session.user).catch(e=>{setError(e.message);$('#authGate').style.display='grid'});});
+if(sb)sb.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){recoveryMode=true;showAuthMode();$('#authGate').style.display='grid';$('.shell').classList.remove('ready');}if(!session){user=null;$('#authGate').style.display='grid';$('.shell').classList.remove('ready');}});
