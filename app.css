@@ -35,3 +35,5 @@
 .plan-icon[data-plan=not_attending],.plan-quick[data-plan=not_attending],.no-attend-mark{color:#c43d36!important}.plan-icon.active.not-attending,.plan-quick.active.not-attending{background:#fff0ed;border-color:#f2c2b8;color:#a84738}
 
 .registration-button:disabled{background:#f1f2ed;border-color:#e5e6df;color:#92958b;cursor:not-allowed}
+
+.attendees-head{gap:10px}.attendee-count{border:1px solid #e2e9d0;background:#f6f9ed;color:#526b1b;border-radius:999px;padding:6px 10px;font-size:10px;font-weight:800}.attendee-count span{display:inline-block;margin-left:3px;transition:transform .18s}.attendee-count.open span{transform:rotate(180deg)}.attendee-list[hidden]{display:none}
