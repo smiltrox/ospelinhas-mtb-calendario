@@ -1,0 +1,16 @@
+{
+  "name": "OS PELINHAS · Calendario MTB",
+  "short_name": "Pelinhas MTB",
+  "description": "Calendario de carreras y asistencias del club OS PELINHAS DE OLIVENZA M.T.B.",
+  "lang": "es-ES",
+  "start_url": "/ospelinhas-mtb-calendario/",
+  "scope": "/ospelinhas-mtb-calendario/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#171914",
+  "theme_color": "#171914",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
