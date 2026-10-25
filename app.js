@@ -2,7 +2,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const cfg = window.PELINHAS_CONFIG || {};
 const ready = !!cfg.SUPABASE_URL && !!cfg.SUPABASE_ANON_KEY && !cfg.SUPABASE_URL.includes('TU-PROYECTO') && !cfg.SUPABASE_ANON_KEY.includes('PEGA_AQUI');
-const sb = ready ? createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY) : null;
+const rememberPreferenceKey='ospelinhas-remember-session';
+let rememberSession=localStorage.getItem(rememberPreferenceKey)!=='false';
+const authStorage={
+  getItem(key){return (rememberSession?localStorage:sessionStorage).getItem(key);},
+  setItem(key,value){const active=rememberSession?localStorage:sessionStorage,other=rememberSession?sessionStorage:localStorage;active.setItem(key,value);other.removeItem(key);},
+  removeItem(key){localStorage.removeItem(key);sessionStorage.removeItem(key);}
+};
+const sb = ready ? createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY,{auth:{storage:authStorage,persistSession:true}}) : null;
 const $ = (s) => document.querySelector(s);
 const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 let user = null, profile = null, isAdmin = false, season = new Date().getFullYear(), races = [], attendance = [], availability = [], profileMap = {}, profilePhotos = {}, posterUrls = {}, signupMode = false, resetRequestMode = false, recoveryMode = location.hash.includes('type=recovery'), calendarView = 'month', periodIndex = new Date().getMonth(), selectedDate = '', editingRaceId = null;
@@ -48,6 +55,7 @@ function showAuthMode(){
   $('#nameField').hidden=!signupMode;
   $('#passwordField').hidden=resetRequestMode;
   $('#forgotPassword').hidden=signupMode||resetRequestMode||recoveryMode;
+  $('#rememberOption').hidden=signupMode||resetRequestMode||recoveryMode;
   $('#authSwitch').hidden=recoveryMode;
   $('#passwordLabel').textContent=recoveryMode?'Nueva contraseña':'Contraseña';
   password.required=!resetRequestMode;
@@ -61,6 +69,8 @@ function showAuthMode(){
 $('#authSwitch').onclick=()=>{if(resetRequestMode){resetRequestMode=false;signupMode=false;}else signupMode=!signupMode;recoveryMode=false;showAuthMode();setError();};
 $('#forgotPassword').onclick=()=>{signupMode=false;resetRequestMode=true;showAuthMode();setError();};
 if(recoveryMode)showAuthMode();
+$('#rememberSession').checked=rememberSession;
+$('#rememberSession').addEventListener('change',e=>{rememberSession=e.currentTarget.checked;localStorage.setItem(rememberPreferenceKey,String(rememberSession));});
 if(!ready){$('#setupNote').hidden=false;$('#authSubmit').disabled=true;$('#authSwitch').disabled=true;$('#authSubmit').textContent='Configura Supabase para continuar';}
 
 $('#authForm').onsubmit=async e=>{
