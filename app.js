@@ -205,6 +205,15 @@ $('#dayAddRace').onclick=()=>{editingRaceId=null;$('#dayModal').classList.remove
 $('#profileBtn').onclick=()=>$('#profileModal').classList.add('open');
 $('#signOutBtn').onclick=async()=>{await sb.auth.signOut();location.reload();};
 $('#profileForm').onsubmit=async e=>{e.preventDefault();const save=$('#saveProfile');save.disabled=true;try{const name=$('#profileNameInput').value.trim();if(!name)throw new Error('Escribe tu nombre.');let avatarPath=profile.avatar_path||null;const file=$('#profilePhoto').files[0];if(file){if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024)throw new Error('Usa una foto JPG, PNG o WebP de hasta 5 MB.');avatarPath=`${user.id}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;const {error:uploadError}=await sb.storage.from('profile-photos').upload(avatarPath,file,{contentType:file.type});if(uploadError)throw uploadError;}const {error}=await sb.from('profiles').update({display_name:name,avatar_path:avatarPath}).eq('id',user.id);if(error)throw error;profile={...profile,display_name:name,avatar_path:avatarPath};$('#profileModal').classList.remove('open');toast('Perfil actualizado.');await start(user);}catch(err){toast(err.message||'No se pudo guardar el perfil.');}finally{save.disabled=false;}};
+$('#changePasswordForm').onsubmit=async e=>{
+  e.preventDefault();const f=new FormData(e.currentTarget),current=String(f.get('current_password')),next=String(f.get('new_password')),confirmPassword=String(f.get('confirm_password')),button=$('#changePasswordBtn');
+  if(next.length<8){toast('La nueva contraseña debe tener al menos 8 caracteres.');return;}
+  if(next!==confirmPassword){toast('Las nuevas contraseñas no coinciden.');return;}
+  button.disabled=true;
+  try{const {error:verifyError}=await sb.auth.signInWithPassword({email:user.email,password:current});if(verifyError)throw new Error('La contraseña actual no es correcta.');const {error:updateError}=await sb.auth.updateUser({password:next});if(updateError)throw updateError;e.currentTarget.reset();toast('Contraseña actualizada.');}
+  catch(err){toast(authErrorMessage(err));}
+  finally{button.disabled=false;}
+};
 ['filterText','filterType','filterFrom','filterTo','filterDistanceMin','filterDistanceMax','filterElevationMin','filterElevationMax','filterRegistration'].forEach(id=>{const el=$(`#${id}`);if(el)el.addEventListener('input',renderRaceTable);});
 $('#clearFilters').onclick=()=>{document.querySelectorAll('#raceFilters input').forEach(x=>x.value='');$('#filterType').value='';$('#filterRegistration').value='all';renderRaceTable();};
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.close).classList.remove('open'));
