@@ -46,7 +46,7 @@ jobs:
           window.PELINHAS_CONFIG = { SUPABASE_URL: "$SUPABASE_URL", SUPABASE_ANON_KEY: "$SUPABASE_ANON_KEY" };
           EOF
           mkdir -p _site
-          cp index.html app.js app.css config.js logo-club.png _site/
+          cp index.html app.js app.css config.js logo-club.png manifest.webmanifest icon-192.png icon-512.png apple-touch-icon.png _site/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
