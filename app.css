@@ -33,3 +33,5 @@
 @media(max-width:720px){.race-day-modal{height:92dvh;max-height:92dvh;display:flex;flex-direction:column}.race-day-modal .modalhead,.race-day-modal .day-actions{flex:none}.race-day-modal .day-races{flex:1;min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain}.race-detail-body{display:flex;flex-direction:column}.race-detail-body>.attendees{order:4}.race-detail-body>.member-plan-controls{order:2;margin:12px 0 0;min-height:58px}.race-detail-body>.race-detail-actions{order:3;margin:9px 0 0}.race-detail-body .plan-icon{min-width:68px;min-height:46px;touch-action:manipulation}.race-detail-actions .join-button,.race-detail-actions .registration-button,.race-detail-actions .race-share{min-height:46px;touch-action:manipulation}}
 
 .plan-icon[data-plan=not_attending],.plan-quick[data-plan=not_attending],.no-attend-mark{color:#c43d36!important}.plan-icon.active.not-attending,.plan-quick.active.not-attending{background:#fff0ed;border-color:#f2c2b8;color:#a84738}
+
+.registration-button:disabled{background:#f1f2ed;border-color:#e5e6df;color:#92958b;cursor:not-allowed}
